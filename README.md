@@ -36,6 +36,21 @@ never sent to any server, never written to network requests, and never persisted
 - **That plaintext never leaves (behavioral):** with DevTools open, confirm that your passphrase and decrypted
   data never appear in any outbound request; only ciphertext is stored or synced.
 
+## Verify the running app (tools provided)
+
+- **In-app page** — open prompt-pipeline.io, click the **"Verifiable"** badge in the footer (or append `?verify`).
+  It hashes the bytes of the loaded `vault-core` chunk in your browser (SHA-256, WebCrypto) and shows the value to
+  compare, plus links to this repo and its attestations.
+- **Bookmarklet** — [`verify-bookmarklet.js`](./verify-bookmarklet.js) (readable source; the in-app page also shows a
+  copyable one-liner). Click it on any page to print the loaded chunk's SHA-256 and the comparison.
+- **SLSA provenance** — every tag/release runs [`.github/workflows/release.yml`](./.github/workflows/release.yml),
+  which packs the module and produces a signed build-provenance attestation (GitHub OIDC → sigstore/Rekor). See the
+  repo's **Attestations** tab. This anchors source→artifact integrity to a public, tamper-evident log.
+
+**Honest limit:** the served chunk is bundled/minified by the (closed) frontend build, so reproducing its exact bytes
+needs that build chain. The strong, repo-anchored guarantees are: the open source above, the SLSA provenance of the
+package, and the behavioral network check — re-verify for each sensitive session.
+
 ## Public API (`src/index.ts`)
 
 - `crypto/types` — `RecordType`, `KdfParams`, `EncryptedBlob`, `EncryptedRecord`, `VaultHeader`, `VaultError`.

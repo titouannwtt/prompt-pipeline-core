@@ -1,0 +1,57 @@
+name: release
+
+# Publie un artefact vérifiable de vault-core + une attestation de provenance SLSA (signée via GitHub OIDC,
+# journal public sigstore/Rekor). C'est l'ancre de confiance de la vérification « hash chargé == source publiée » :
+# un auditeur peut confronter le SHA-256 du module chargé dans son navigateur à un build de ce dépôt à ce commit.
+
+on:
+  release:
+    types: [published]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC → signature de l'attestation
+  attestations: write # publication de l'attestation de provenance
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install (reproducible)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # Artefact : tarball npm déterministe (horodatages dérivés du commit, pas de l'heure de build).
+      - name: Pack
+        id: pack
+        run: |
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          TARBALL="$(npm pack --silent)"
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+          sha256sum "$TARBALL"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.pack.outputs.tarball }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vault-core-package
+          path: ${{ steps.pack.outputs.tarball }}
