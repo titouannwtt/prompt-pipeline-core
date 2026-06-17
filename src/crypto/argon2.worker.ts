@@ -1,7 +1,7 @@
 import { deriveBytes } from './argon2-core';
 import type { KdfParams } from './types';
 
-// Web Worker Argon2id : déporte le KDF (256 MiB ~1 s) hors du thread UI (sinon l'UI gèle — CLAUDE.md).
+// Web Worker Argon2id : déporte le KDF (256 MiB ~1 s) hors du thread UI (sinon l'UI gèle).
 interface Req {
   id: number;
   password: string;
