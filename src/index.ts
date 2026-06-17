@@ -1,11 +1,9 @@
-// API publique du SDK Vault open-source (@pp/vault-core, AGPL-3.0-or-later).
+// Public API of vault-core (AGPL-3.0-or-later) — the cryptographic core of Prompt Pipeline.
 //
-// Frontière de confiance : c'est la SEULE partie du front qui manipule la phrase de chiffrement et le clair lors
-// du (dé)chiffrement. Le reste du site (fermé) ne reçoit que du ciffré à l'écriture et du clair à la demande.
-// Vérifiable au runtime : hasher le chunk chargé et le comparer au hash publié sur GitHub (cf. docs verify-it-yourself).
-//
-// Périmètre actuel (incrément 1) : crypto (Argon2id, AES-256-GCM, clé non-extractible, en-tête KDF).
-// À venir : couche persistance chiffrée, client de sync (I/O ciffré), primitive iframe de saisie de la phrase.
+// Every cryptographic operation lives here: passphrase → key derivation (Argon2id), AES-256-GCM with a
+// non-extractable key, per-record authenticated encryption (AAD = pp|fmt|type|id), and the KDF header. The
+// passphrase and key are passed in and never leave the browser. See README.md for how to verify the running app
+// uses exactly this code.
 
 export * from './crypto/types';
 export * from './crypto/random';
