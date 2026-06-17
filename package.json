@@ -1,0 +1,24 @@
+{
+  "name": "@pp/vault-core",
+  "version": "0.1.0",
+  "description": "Prompt Pipeline — SDK Vault open-source (AGPL) : surface cryptographique vérifiable (Argon2id + AES-256-GCM, clé non-extractible, en-tête KDF). C'est la SEULE partie qui touche la phrase de chiffrement et le clair en chiffrement/déchiffrement.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": false,
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "hash-wasm": "4.12.0"
+  },
+  "devDependencies": {
+    "fast-check": "4.8.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.8"
+  }
+}
