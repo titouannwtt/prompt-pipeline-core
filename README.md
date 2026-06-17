@@ -1,30 +1,65 @@
-# @pp/vault-core (AGPL-3.0-or-later)
+# vault-core
 
-**SDK Vault open-source et vérifiable de [Prompt Pipeline](https://prompt-pipeline.io).**
+**The open-source cryptographic core of [Prompt Pipeline](https://prompt-pipeline.io).**
 
-C'est la **seule** partie du front qui touche votre **phrase de chiffrement** et le **clair** lors du
-chiffrement/déchiffrement. Le reste du site (fermé) ne manipule que du **ciffré** à l'écriture et reçoit le clair
-à la demande. Ce module est publié pour qu'un expert puisse **prouver** que vos données sont chiffrées de bout en
-bout et que la clé ne quitte jamais votre appareil.
+Prompt Pipeline is a zero-trust web workspace where developers store sensitive material — SSH/SQL/FTP
+credentials, API keys, OAuth tokens, connection profiles. All of it is encrypted **in your browser** before it is
+ever stored locally or synced to the server, using a passphrase that only you hold.
 
-## Garantie (claim honnête, 3 niveaux)
-1. **Prouvé (crypto + hash + build reproductible)** : la phrase ne quitte jamais le navigateur ; les enregistrements
-   sont chiffrés côté client (Argon2id → AES-256-GCM, `CryptoKey` **non-extractible**) ; seul du ciffré + métadonnées
-   non sensibles partent vers le serveur. → **L'opérateur/la base ne peuvent pas déchiffrer.**
-2. **Vérifiable au réseau (DevTools)** : le clair ne va qu'aux destinations documentées (relais → cible pour SSH/IA/Drive).
-3. **Confiance résiduelle (assumée)** : code livré par l'opérateur (+ Cloudflare) → limite inhérente à tout E2EE web ;
-   mitigée par la vérification du hash ci-dessous + (à venir) l'isolation de la phrase dans une iframe sandbox.
+This repository is that encryption engine. It is published under **AGPL-3.0** so that anyone can read, audit, and
+independently verify exactly how Prompt Pipeline protects user data — and confirm that the operator of
+prompt-pipeline.io **cannot** read it.
 
-## Vérifier que prompt-pipeline.io utilise bien CE code
-1. Ouvrir DevTools → onglet réseau → repérer le chunk `vault-core` chargé.
-2. En calculer le hash (ou utiliser le bookmarklet fourni — à venir).
-3. Le comparer au hash publié sur la **release GitHub** + l'**attestation SLSA** (sigstore/Rekor).
-   La confiance vient de GitHub/sigstore, **jamais** du serveur de prompt-pipeline.io.
+## What this module does
 
-## Périmètre
-- **Incrément 1 (actuel)** : `crypto/` — Argon2id (worker), AES-256-GCM, aléa, encodage, en-tête KDF, types.
-- **À venir** : couche persistance chiffrée, client de sync (I/O ciffré uniquement), primitive iframe de saisie de la phrase.
+It performs every cryptographic operation in the product:
 
-## Portabilité
-Pensé sans dépendance DOM (hors la future primitive de saisie) → réutilisable côté application mobile pour partager
-le même coffre chiffré entre web et mobile avec la même phrase.
+- **Key derivation** from your passphrase — Argon2id (`hash-wasm`), run in a Web Worker, with calibrated
+  memory/time parameters embedded in a versioned header.
+- **Encryption / decryption** — AES-256-GCM via WebCrypto. The master key is a **non-extractable `CryptoKey`**:
+  even a successful XSS that obtains the key object cannot export the raw bytes for offline cracking.
+- **Authenticated, bound ciphertext** — each record's AEAD additional data is `pp|<fmt>|<type>|<id>`, which
+  prevents object substitution and format downgrade. The GCM tag *is* the integrity check (no separate hash).
+- **Safe encoding & randomness** — base64 helpers and `crypto.getRandomValues`-only random bytes.
+
+The passphrase and the derived key are passed into these functions and **never leave the browser**. They are
+never sent to any server, never written to network requests, and never persisted in extractable form.
+
+## What you can verify
+
+- **Cryptographic correctness (from source):** read this repository and confirm the algorithms, parameters, the
+  non-extractable key, the per-record AAD, and that no code here transmits secrets anywhere.
+- **That the running app uses this code:** Prompt Pipeline loads `vault-core` as a separately addressable module.
+  Hash the bytes your browser actually loaded (DevTools → Network) and compare them to a reproducible build of this
+  repository at the matching version. The trust anchor is this repository, not prompt-pipeline.io's server — and
+  the comparison holds even when traffic passes through a CDN/proxy, because you hash what the browser received.
+- **That plaintext never leaves (behavioral):** with DevTools open, confirm that your passphrase and decrypted
+  data never appear in any outbound request; only ciphertext is stored or synced.
+
+## Public API (`src/index.ts`)
+
+- `crypto/types` — `RecordType`, `KdfParams`, `EncryptedBlob`, `EncryptedRecord`, `VaultHeader`, `VaultError`.
+- `crypto/random` — `getRandomBytes`.
+- `crypto/encoding` — base64 / UTF-8 helpers.
+- `crypto/aes-gcm` — `importMasterKey` (non-extractable), `encryptRecord`, `decryptRecordToString`, `encryptRaw`, `decryptRaw`.
+- `crypto/kdf` — `deriveKeyBytes` (Argon2id, worker-offloaded), `calibrate`.
+- `crypto/vault-header` — KDF defaults, format version, header validation.
+
+## Install & test
+
+```bash
+npm install
+npm run typecheck
+npm test
+```
+
+## Portability
+
+The module has no DOM dependencies, so the same engine can back a native mobile client: signing in with the same
+account and entering the same passphrase yields the same key and the same decrypted vault across devices.
+
+## License
+
+AGPL-3.0-or-later (full text in [`LICENSE`](./LICENSE)). Network use of a derivative obliges you to publish the
+corresponding source. This keeps the encryption auditable while deterring closed-source re-hosting of the service.
+The copyright holder may use this code in their own (closed) product, as is standard for the author of the work.
