@@ -1,24 +1,54 @@
 {
-  "name": "@pp/vault-core",
-  "version": "0.1.0",
-  "description": "Prompt Pipeline — SDK Vault open-source (AGPL) : surface cryptographique vérifiable (Argon2id + AES-256-GCM, clé non-extractible, en-tête KDF). C'est la SEULE partie qui touche la phrase de chiffrement et le clair en chiffrement/déchiffrement.",
-  "license": "AGPL-3.0-or-later",
+  "name": "prompt-pipeline-core",
+  "version": "0.2.0",
+  "description": "Prompt Pipeline Core: the standalone, reproducible encryption module (Argon2id + AES-256-GCM, non-extractable key, versioned KDF header). Zero runtime dependency.",
+  "license": "Apache-2.0",
   "type": "module",
   "private": false,
   "sideEffects": false,
-  "exports": {
-    ".": "./src/index.ts"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/titouannwtt/prompt-pipeline-core.git"
   },
+  "main": "./dist/prompt-pipeline-core.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/prompt-pipeline-core.js"
+    },
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "prompt-pipeline-core": "./bin/verify.mjs"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "bin",
+    "dist",
+    "releases",
+    "examples",
+    "verify-bookmarklet.js",
+    "LICENSE",
+    "NOTICE"
+  ],
   "scripts": {
+    "build": "node scripts/build.mjs",
+    "release": "node scripts/release.mjs",
+    "prepare": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": {
-    "hash-wasm": "4.12.0"
-  },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "fast-check": "4.8.0",
+    "hash-wasm": "4.12.0",
     "typescript": "5.9.3",
     "vitest": "4.1.8"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

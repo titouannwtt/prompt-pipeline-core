@@ -10,7 +10,9 @@ let workerSingleton: Worker | null = null;
 function getWorker(): Worker | null {
   if (typeof Worker === 'undefined') return null;
   if (!workerSingleton) {
-    workerSingleton = new Worker(new URL('./argon2.worker.ts', import.meta.url), { type: 'module' });
+    // `.js` : le worker est construit à côté de ce module (dist/argon2.worker.js, voir scripts/build.mjs). Les
+    // consommateurs servent les deux fichiers ensemble, tels quels, dans le même dossier.
+    workerSingleton = new Worker(new URL('./argon2.worker.js', import.meta.url), { type: 'module' });
   }
   return workerSingleton;
 }

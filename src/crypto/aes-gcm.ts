@@ -1,7 +1,7 @@
 import { getRandomBytes } from './random';
 import { utf8ToBytes, bytesToUtf8, bytesToBase64, base64ToBytes } from './encoding';
 import { FORMAT_VERSION } from './vault-header';
-import type { EncryptedBlob } from './types';
+import { ensureSecureContext, type EncryptedBlob } from './types';
 
 // AES-256-GCM via WebCrypto. La clé maître est un CryptoKey NON-EXTRACTIBLE : une XSS qui obtient
 // l'objet ne peut pas lire les octets pour cracker hors-ligne (audit 04 §3.5). AEAD = intégrité (tag GCM)
@@ -11,6 +11,7 @@ import type { EncryptedBlob } from './types';
 const buf = (u: Uint8Array): BufferSource => u as unknown as BufferSource;
 
 export async function importMasterKey(bytes: Uint8Array): Promise<CryptoKey> {
+  ensureSecureContext(); // LOW-09 : échoue tôt et clairement hors contexte sécurisé
   const key = await crypto.subtle.importKey('raw', buf(bytes), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
   bytes.fill(0); // réduit la surface (best-effort, pas une garantie — GC non maîtrisable)
   return key;

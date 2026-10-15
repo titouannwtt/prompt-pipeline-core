@@ -1,6 +1,6 @@
 // Types du coffre chiffré (phase 4). Aucun secret ici, uniquement des formes de données.
 
-export type RecordType = 'aiProfile' | 'sshProfile' | 'sqlProfile' | 'ftpProfile' | 'githubProfile' | 'mcpConnection' | 'googleConnection' | 'project' | 'pipeline' | 'tab' | 'localFile';
+export type RecordType = 'aiProfile' | 'sshProfile' | 'sqlProfile' | 'ftpProfile' | 'githubProfile' | 'mcpConnection' | 'project' | 'pipeline' | 'tab' | 'localFile' | 'dictationVocab' | 'projectFolder';
 
 /** Paramètres KDF embarqués dans l'en-tête du coffre (rétrocompat : le déverrouillage les relit). */
 export interface KdfParams {
@@ -23,6 +23,10 @@ export interface EncryptedRecord extends EncryptedBlob {
   type: RecordType;
   meta: Record<string, unknown>;
   fmt: number; // version de format d'enregistrement
+  // Révision SERVEUR connue de cet enregistrement (garde anti-régression de la sync, migration 0013). Un push
+  // envoie `rev + 1` : le serveur refuse toute écriture dont la révision n'est pas STRICTEMENT supérieure à la
+  // sienne → un appareil à l'état périmé ne peut plus écraser des données saisies ailleurs entre-temps.
+  rev?: number;
 }
 
 /** En-tête du coffre stocké en clair dans la table meta (le salt n'est pas un secret). */
@@ -47,4 +51,13 @@ export class VaultError extends Error {
     this.name = 'VaultError';
     this.code = code;
   }
+}
+
+// Garde de contexte sécurisé (LOW-09) : WebCrypto (`crypto.subtle`) EXIGE un contexte sécurisé (HTTPS ou localhost).
+// Hors de ce contexte, `crypto.subtle` est indéfini et toute opération échouerait de façon cryptique → on lève le
+// code d'erreur DÉDIÉ (mappé i18n) au plus tôt. En Node/tests, `isSecureContext` est indéfini (check ignoré) et
+// `crypto.subtle` existe (webcrypto global) → aucun impact.
+export function ensureSecureContext(): void {
+  if (typeof globalThis.isSecureContext !== 'undefined' && !globalThis.isSecureContext) throw new VaultError('NOT_SECURE_CONTEXT');
+  if (!globalThis.crypto?.subtle) throw new VaultError('NOT_SECURE_CONTEXT');
 }

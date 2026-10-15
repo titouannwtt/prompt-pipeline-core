@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>prompt-pipeline-core, minimal example</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+      label { display: block; margin-top: 1rem; font-weight: 600; }
+      textarea, input { width: 100%; box-sizing: border-box; font: inherit; }
+      button { margin: 1rem 0.5rem 0 0; font: inherit; }
+      #out { margin-top: 1rem; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>prompt-pipeline-core</h1>
+    <p>Encrypts and decrypts a text with a passphrase, in this page, using the built files in <code>dist/</code>.</p>
+    <label for="text">Text</label>
+    <textarea id="text" rows="3">hello</textarea>
+    <label for="pass">Passphrase</label>
+    <input id="pass" type="password" autocomplete="off" value="correct horse battery staple" />
+    <button id="encrypt" type="button">Encrypt</button>
+    <button id="decrypt" type="button">Decrypt</button>
+    <label for="box">Encrypted box (JSON)</label>
+    <textarea id="box" rows="5"></textarea>
+    <p id="out" role="status"></p>
+    <script type="module" src="./ui.js"></script>
+  </body>
+</html>
